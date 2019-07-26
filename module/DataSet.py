@@ -134,8 +134,8 @@ class DataSet:
 #==========================================================================    
 #Debug mode
 #==========================================================================    
-path = '/home/tuyenqn/Documents/data/phandong_68.json'
-imagePath = '/home/tuyenqn/Documents/data/phandong_68.jpg'
-data = DataSet(path, imagePath, '/home/tuyenqn/Documents/ConvertLabelData/module/test/')
-data.export_file()
-print(len(data.label_datas))
+# path = '/home/tuyenqn/Documents/data/phandong_68.json'
+# imagePath = '/home/tuyenqn/Documents/data/phandong_68.jpg'
+# data = DataSet(path, imagePath, '/home/tuyenqn/Documents/ConvertLabelData/module/test/')
+# data.export_file()
+# print(len(data.label_datas))
