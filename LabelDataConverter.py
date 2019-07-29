@@ -17,6 +17,9 @@ class Converter:
         if outputDirectoryPath[-1] != '/':
             outputDirectoryPath += '/'
         
+        if wrong_directory[-1] != '/':
+            wrong_directory += '/'
+            
         self.output_path = outputDirectoryPath
         self.wrong_directory = wrong_directory
         self.mode = mode
@@ -31,7 +34,17 @@ class Converter:
         data_extension = ".json" if mode == FunctionMode.CONVERTER else ".txt"
         self.__retrieve_raw_data(path, data_extension)
         self.__retrieve_images(path)
+        self.__filter_raw_data()
     
+    #Filter data file, just keep files which have image file.
+    def __filter_raw_data(self):
+        raw_datas = []
+        for file in self.data_paths:
+            if self.__find_image_file(file) != '':
+                raw_datas.append(file)
+        
+        self.data_paths = raw_datas
+
     def __retrieve_raw_data(self, path, data_extension):
         self.data_paths = [f for f in glob.glob(path + "**/*" + data_extension, recursive=True)]
     
@@ -59,21 +72,16 @@ class Converter:
 
     def __find_image_file(self, json_path):
         name = json_path.split("/")[-1].split(".")[0]
+        
         for img in self.image_paths:
-            if name in img:
+            img_name = img.split("/")[-1].split(".")[0]
+            if name == img_name:
                 return img
         return ''
     
     def convert_label_data(self):
         for json in self.data_paths:
-            if self.mode == FunctionMode.CONVERTER:
-                image_path = self.__find_image_file(json)
-                img = Image.open(image_path)
-                max_size = img.size
-            else:
-                max_size = (sys.maxsize, sys.maxsize)
-            data = DataSet(json, max_size, self.output_path, self.mode)
-            
+            data = DataSet(json, self.__find_image_file(json), self.output_path, self.mode)
             if data.is_valid:
                 data.export_file()
             else:
@@ -92,6 +100,7 @@ class Converter:
 
     def __process_wrong_data(self):
         print("======================================================")
+        print("Wrong directory path: ", self.wrong_directory)
         self.__copy_images(self.wrong_files, self.wrong_directory)
         for file in self.wrong_files:
             img = self.__find_image_file(file)
@@ -115,8 +124,13 @@ wrong_directory = args.wrong_directory
 
 if args.mode == 2:
     mode = FunctionMode.FILTER
+elif args.mode == 3:
+    mode = FunctionMode.REVERSE
 else:
     mode = FunctionMode.CONVERTER
+
+if wrong_directory == None:
+    wrong_directory = "./Wrong_Directory"
 
 #===========================================================
 #Debug mode
@@ -124,7 +138,7 @@ else:
 # input_path = '/home/tuyenqn/Downloads/dataset_train_v1_anh_mang'
 # output_path = '../DataSetCheck'
 # wrong_directory = './wrong_directory'
-# mode = FunctionMode.FILTER
+# mode = FunctionMode.REVERSE
 #===========================================================
 converter = Converter(input_path, output_path, wrong_directory, mode)
 converter.convert_label_data()

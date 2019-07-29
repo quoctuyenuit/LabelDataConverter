@@ -5,6 +5,7 @@ OutputDirectory: Đường dẫn folder cần lưu dữ liệu đầu ra
 Mode: Chọn chức năng
         mode = 1  ===> Script chạy chức năng convert từ json sang data dạng txt
         mode = 2  ===> Script chạy chức năng filter từ txt file
+	mode = 3  ===> Script chạy chức năng reverse từ txt sang json để labelme có thể đọc
 WrongDirectory: Đường dẫn thư mục chứa các file images lalbe sai
 
 (Tất cả các folder output không cần thiết phải tạo trước)

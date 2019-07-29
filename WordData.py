@@ -73,6 +73,29 @@ class WordData:
         result += self.label
         return result
     
+    def to_json_object(self):
+        data = {}
+        data['label'] = self.label
+        data['line_color'] = None
+        data['fill_color'] = None
+        data['points'] = []
+
+        p1 = self.points[0]
+        p2 = self.points[1]
+        p3 = self.points[2]
+        if p1.x == p2.x:
+            data['points'].append([p1.to_array(), p3.to_array()])
+            shape_type = "rectangle"
+        else:
+            for p in self.points:
+                data['points'].append(p.to_array())
+            shape_type = "polygon"
+
+        data['shape_type'] = shape_type
+        data["flags"] = {}
+
+        return data
+    
 # # ==========================================================================    
 # # Debug mode
 # # ==========================================================================   

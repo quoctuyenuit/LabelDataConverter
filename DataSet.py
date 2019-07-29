@@ -1,23 +1,33 @@
 import json
 import os
 import operator
+import base64
+import sys
 import numpy as np
 from WordData import WordData
 from FunctionMode import FunctionMode
+from PIL import Image
 
 class DataSet:
-    def __init__(self, path, max_size, output_path, mode):
+    def __init__(self, path, image_path, output_path, mode):
         self.data_path = path
         self.output_path = output_path
-        self.max_size = max_size
+        self.image_path = image_path
+        try:
+            img = Image.open(self.image_path)
+            self.max_size = img.size
+        except:
+            self.max_size = (sys.maxsize, sys.maxsize)
+
         self.is_valid = True
+        self.mode = mode
         self.__retrieve_data(mode)
     
     def __retrieve_data(self, mode):
-        if mode == FunctionMode.FILTER:
-           self.__retrieve_txt_data()
+        if mode == FunctionMode.CONVERTER:
+           self.__retrieve_json_data()
         else:
-            self.__retrieve_json_data()
+            self.__retrieve_txt_data()
 
     def __retrieve_txt_data(self):
         self.word_datas = []
@@ -86,12 +96,47 @@ class DataSet:
 
 
     def export_file(self):
+        if self.mode == FunctionMode.REVERSE:
+            self.__export_json_file()
+        else:
+            self.__export_txt_file()
+    
+    def __export_txt_file(self):
         path = self.output_path + self.data_path.split("/")[-1].split(".")[0] + ".txt"
         txtFiles = open(path, "w")
         for data in self.word_datas:
             txtFiles.write("%s\n" %data.to_string())
         
         txtFiles.close()
+    
+    #Export jsonfile to open in LabelMe
+    def __export_json_file(self):
+        data = {}
+        data['version'] = "3.16.2"
+        data['flags'] = {}
+        data['shapes'] = []
+        for shape in self.word_datas:
+            data['shapes'].append(shape.to_json_object())
+        data['lineColor'] = [0, 255, 0, 128]
+        data['fillColor'] = [255, 0, 0, 128]
+        data['imagePath'] = self.image_path.split('/')[-1]
+        
+        with open(self.image_path, "rb") as image_file:
+            imageData = base64.b64encode(image_file.read()).decode('utf-8')
+            data['imageData'] = str(imageData)
+
+        img = Image.open(self.image_path)
+        data['imageHeight'] = img.size[1]
+        data['imageWidth'] = img.size[0]
+
+        path = self.output_path + self.data_path.split("/")[-1].split(".")[0] + ".json"
+        with open(path, 'w') as outfile:
+            json.dump(data, outfile, ensure_ascii=False, indent=2)
+
+        
+
+
+
 
 # # ==========================================================================    
 # # Debug mode

@@ -26,4 +26,4 @@ class Point:
         return str(int(round(self.x))) + "," + str(int(round(self.y)))
 
     def to_array(self):
-        return [self.x, self.y]
+        return [int(self.x), int(self.y)]
