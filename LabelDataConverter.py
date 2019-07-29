@@ -9,7 +9,7 @@ from FunctionMode import FunctionMode
 
 class Converter:
     imageExtensions = ['.tif', '.jpg', '.png', '.jpeg']
-    def __init__(self, path, outputDirectoryPath, mode):
+    def __init__(self, path, outputDirectoryPath, wrong_directory, mode):
         #Tiền xử lý path để hàm glob có thể tìm file đệ quy.
         if path[-1] != '/':
             path += '/'
@@ -17,18 +17,20 @@ class Converter:
         if outputDirectoryPath[-1] != '/':
             outputDirectoryPath += '/'
         
-        self.outputPath = outputDirectoryPath
+        self.output_path = outputDirectoryPath
+        self.wrong_directory = wrong_directory
         self.mode = mode
+        self.wrong_files = []
 
         #Make directory if not exists output path
-        if not os.path.exists(self.outputPath):
-            os.mkdir(self.outputPath)
+        if not os.path.exists(self.output_path):
+            os.mkdir(self.output_path)
+        if not os.path.exists(self.wrong_directory):
+            os.mkdir(self.wrong_directory)
         
         data_extension = ".json" if mode == FunctionMode.CONVERTER else ".txt"
         self.__retrieve_raw_data(path, data_extension)
-
-        if mode == FunctionMode.CONVERTER:
-            self.__retrieve_images(path)
+        self.__retrieve_images(path)
     
     def __retrieve_raw_data(self, path, data_extension):
         self.data_paths = [f for f in glob.glob(path + "**/*" + data_extension, recursive=True)]
@@ -70,22 +72,46 @@ class Converter:
                 max_size = img.size
             else:
                 max_size = (sys.maxsize, sys.maxsize)
-            data = DataSet(json, max_size, self.outputPath, self.mode)
-            data.export_file()
+            data = DataSet(json, max_size, self.output_path, self.mode)
+            
+            if data.is_valid:
+                data.export_file()
+            else:
+                self.wrong_files.append(json)
+        
+        self.__process_wrong_data()
 
     def copy_images(self):
-        for json in self.data_paths:
+        self.__copy_images(self.data_paths, self.output_path)
+    
+    def __copy_images(self, files, output):
+        for file in files:
             for img in self.image_paths:
-                if self.__compare(json, img):
-                    shutil.copy(img, self.outputPath)
+                if self.__compare(file, img):
+                    shutil.copy(img, output)
+
+    def __process_wrong_data(self):
+        print("======================================================")
+        self.__copy_images(self.wrong_files, self.wrong_directory)
+        for file in self.wrong_files:
+            img = self.__find_image_file(file)
+            os.remove(file)
+            os.remove(img)
+            self.data_paths.remove(file)
+            self.image_paths.remove(self.__find_image_file(file))
+            print("[Wrong] ", file)
+        print("Number of wrong file: ", len(self.wrong_files))
+        print("======================================================")
 
 parser = argparse.ArgumentParser("Convert Data")
-parser.add_argument('-i', dest='inputpath', help="Nhập đường dẫn folder chứa source", type=str)
-parser.add_argument('-o', dest='outputpath', help="Nhập đường dẫn folder muốn để output", type=str)
+parser.add_argument('-i', dest='input_path', help="Nhập đường dẫn folder chứa source", type=str)
+parser.add_argument('-o', dest='output_path', help="Nhập đường dẫn folder muốn để output", type=str)
+parser.add_argument('-wd', dest='wrong_directory', help="Nhập đường dẫn folder muốn để output", type=str)
 parser.add_argument('-m', dest='mode', help="Chọn loại chức năng, 1 ==> Convert json file to txt; 2 ==> Filter txt data", type=int)
 args = parser.parse_args()
-inputPath = args.inputpath
-outputPath = args.outputpath
+input_path = args.input_path
+output_path = args.output_path
+wrong_directory = args.wrong_directory
 
 if args.mode == 2:
     mode = FunctionMode.FILTER
@@ -95,13 +121,13 @@ else:
 #===========================================================
 #Debug mode
 #===========================================================
-# inputPath = '../waste/'
-# outputPath = '../test'
+# input_path = '/home/tuyenqn/Downloads/dataset_train_v1_anh_mang'
+# output_path = '../DataSetCheck'
+# wrong_directory = './wrong_directory'
 # mode = FunctionMode.FILTER
 #===========================================================
-converter = Converter(inputPath, outputPath, mode)
+converter = Converter(input_path, output_path, wrong_directory, mode)
 converter.convert_label_data()
-print("Number of files:", len(converter.data_paths))
-if mode == FunctionMode.CONVERTER:
-    converter.copy_images()
-    print("Number of image file:", len(converter.image_paths))
+converter.copy_images()
+print("Number of files are done:", len(converter.data_paths))
+print("Number of image file done:", len(converter.image_paths))
