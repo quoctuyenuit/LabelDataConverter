@@ -18,8 +18,8 @@ class WordData:
         
         self.__order_points()
 
-        if not self.__check_shape():
-            self.label = self.__default_str
+        # if not self.__check_shape():
+        #     self.label = self.__default_str
 
     def __order_points(self):
         points_ordered_x = self.points.copy()
